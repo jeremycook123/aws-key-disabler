@@ -8,18 +8,15 @@ The AWS Key disabler is a Lambda Function that disables AWS IAM User Access Keys
 
 ## AWS Lambda Architecture
 
-![Image of Arch]
-(https://github.com/te-papa/aws-key-disabler/blob/master/docs/images/GitHubTepapaLambda.png)
+![Image of Arch](/docs/images/GitHubTepapaLambda.png)
 
 ## SysOps Output for EndUser
 
-![Image of iPhoneEmail]
-(https://github.com/te-papa/aws-key-disabler/blob/master/docs/images/GitHubTepapaOutput.png)
+![Image of iPhoneEmail](/docs/images/GitHubTepapaOutput.png)
 
 ## Developer Toolchain
 
-![Image of Toolchain]
-(https://github.com/te-papa/aws-key-disabler/blob/master/docs/images/GitHubTepapaToolchain.png)
+![Image of Toolchain](/docs/images/GitHubTepapaToolchain.png)
 
 ## Current Limitations
 
