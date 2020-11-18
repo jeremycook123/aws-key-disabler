@@ -1,6 +1,6 @@
 {
   "name": "key_disabler",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Lambda helper functions",
   "main": "Gruntfile.js",
   "dependencies": {
@@ -24,28 +24,36 @@
     "aws_account_number": "123456789012",
     "keystates": {
       "young": {
-        "message": "key is still young"
+        "message": "is still valid"
       },
       "first_warning": {
         "days": 23,
-        "message": "key is due to expire in 1 week (7 days)"
+        "message": "is due to expire in 1 week (7 days) - please rotate"
       },
       "last_warning": {
         "days": 29,
-        "message": "key is due to expire in 1 day (tomorrow)"
+        "message": "is due to expire in 1 day (tomorrow) - please rotate"
       },
       "expired": {
         "days": 30,
-        "message": "key is now EXPIRED! Changing key to INACTIVE state"
+        "message": "is now EXPIRED! Changing key to INACTIVE state - please rotate"
       }
     },
     "email": {
-      "report_to": "receipient@example.com",
-      "report_from": "sender@example.com",
-      "send_completion_report": "False"
+      "from": "no-reply@example.com",
+      "admin": {
+        "enabled": "False",
+        "to": "admin@example.com"
+      },
+      "user": {
+        "enabled": "True"
+      }
     },
     "iam": {
-      "serviceaccount": "IAM_USERNAME_TO_EXCLUDE_IF_ANY",
+      "usernames_skip": [
+        "username1",
+        "username2"
+      ],
       "lambda": {
         "rolename": "LambdaAccessKeyRotationRole",
         "policyname": "LambdaAccessKeyRotationPolicy"

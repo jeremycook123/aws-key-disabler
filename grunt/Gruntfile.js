@@ -21,20 +21,24 @@ module.exports = function(grunt) {
               replacement: '<%= pkg.key_disabler.lambda.deployment_region %>'
             },
             {
-              match: 'serviceaccount',
-              replacement: '<%= pkg.key_disabler.iam.serviceaccount %>'
+              match: 'usernamesskip',
+              replacement: '<%= pkg.key_disabler.iam.usernames_skip %>'
             },
             {
-              match: 'emailreportto',
-              replacement: '<%= pkg.key_disabler.email.report_to %>'
+              match: 'emailfrom',
+              replacement: '<%= pkg.key_disabler.email.from %>'
             },
             {
-              match: 'emailreportfrom',
-              replacement: '<%= pkg.key_disabler.email.report_from %>'
+              match: 'emailadmin',
+              replacement: '<%= pkg.key_disabler.email.admin.enabled %>'
             },
             {
-              match: 'emailsendcompletionreport',
-              replacement: '<%= pkg.key_disabler.email.send_completion_report %>'
+              match: 'emailadminto',
+              replacement: '<%= pkg.key_disabler.email.admin.to %>'
+            },
+            {
+              match: 'emailuser',
+              replacement: '<%= pkg.key_disabler.email.user.enabled %>'
             },
             {
               match: 'maskaccesskeylength',

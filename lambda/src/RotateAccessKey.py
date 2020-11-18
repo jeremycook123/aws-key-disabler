@@ -3,13 +3,18 @@ from datetime import datetime
 import dateutil.tz
 import json
 import ast
+import re
 
 BUILD_VERSION = '@@buildversion'
 AWS_REGION = '@@deploymentregion'
-SERVICE_ACCOUNT_NAME = '@@serviceaccount'
-EMAIL_TO_ADMIN = '@@emailreportto'
-EMAIL_FROM = '@@emailreportfrom'
-EMAIL_SEND_COMPLETION_REPORT = ast.literal_eval('@@emailsendcompletionreport')
+USERNAMES_SKIP = @@usernamesskip
+
+EMAIL_FROM = '@@emailfrom'
+EMAIL_ADMIN = ast.literal_eval('@@emailadmin')
+EMAIL_ADMIN_TO = '@@emailadminto'
+EMAIL_USER = ast.literal_eval('@@emailuser')
+
+EMAIL_REGEX = re.compile(r'[^@]+@[^@]+\.[^@]+')
 
 # Length of mask over the IAM Access Key
 MASK_ACCESS_KEY_LENGTH = ast.literal_eval('@@maskaccesskeylength')
@@ -97,6 +102,30 @@ def send_completion_email(email_to, finished, deactivated_report):
             }
         })
 
+#Will send email containing one of the following messages:
+#Your AWS IAM Access Key (****************34MI) is due to expire in 1 week (7 days) - please rotate.
+#Your AWS IAM Access Key (****************34MI) is due to expire in 1 day (tomorrow) - please rotate.
+#Your AWS IAM Access Key (****************34MI) is now EXPIRED! Changing key to INACTIVE state - please rotate.
+def send_user_email(username, key, message):
+    if not EMAIL_REGEX.match(username):
+        return
+
+    client = boto3.client('ses', region_name=AWS_REGION)
+    response = client.send_email(
+        Source=EMAIL_FROM,
+        Destination={
+            'ToAddresses': [username]
+        },
+        Message={
+            'Subject': {
+                'Data': 'AWS IAM Access Key Rotation'
+            },
+            'Body': {
+                'Html': {
+                'Data': 'Your AWS IAM Access Key (%s) %s.' % (key, message)
+                }
+            }
+        })
 
 def mask_access_key(access_key):
     return access_key[-(ACCESS_KEY_LENGTH-MASK_ACCESS_KEY_LENGTH):].rjust(len(access_key), "*")
@@ -134,8 +163,8 @@ def lambda_handler(event, context):
         print 'username %s' % username
 
         # check to see if the current user is a special service account
-        if username == SERVICE_ACCOUNT_NAME:
-            print 'detected special service account %s, skipping account...', username
+        if username in USERNAMES_SKIP:
+            print 'detected special username (configured service account etc.) %s, key rotation skipped for this account...', username
             continue
 
         access_keys = client.list_access_keys(UserName=username)['AccessKeyMetadata']
@@ -169,12 +198,21 @@ def lambda_handler(event, context):
                 key_state = KEY_YOUNG_MESSAGE
             elif age == FIRST_WARNING_NUM_DAYS:
                 key_state = FIRST_WARNING_MESSAGE
+                if EMAIL_USER:
+                    send_user_email(username, masked_access_key_id, FIRST_WARNING_MESSAGE)
             elif age == LAST_WARNING_NUM_DAYS:
                 key_state = LAST_WARNING_MESSAGE
+                if EMAIL_USER:
+                    send_user_email(username, masked_access_key_id, LAST_WARNING_MESSAGE)
             elif age >= KEY_MAX_AGE_IN_DAYS:
                 key_state = KEY_EXPIRED_MESSAGE
                 client.update_access_key(UserName=username, AccessKeyId=access_key_id, Status=KEY_STATE_INACTIVE)
-                send_deactivate_email(EMAIL_TO_ADMIN, username, age, masked_access_key_id)
+                if EMAIL_USER:
+                    send_user_email(username, masked_access_key_id, KEY_EXPIRED_MESSAGE)
+                
+                if EMAIL_ADMIN:
+                    send_deactivate_email(EMAIL_ADMIN_TO, username, age, masked_access_key_id)
+                
                 key_state_changed = True
 
             print 'key_state %s' % key_state
@@ -192,9 +230,9 @@ def lambda_handler(event, context):
     deactivated_report1 = {'reportdate': finished, 'users': users_report1}
     print 'deactivated_report1 %s ' % deactivated_report1
 
-    if EMAIL_SEND_COMPLETION_REPORT:
+    if EMAIL_ADMIN:
         deactivated_report2 = {'reportdate': finished, 'users': users_report2}
-        send_completion_email(EMAIL_TO_ADMIN, finished, deactivated_report2)
+        send_completion_email(EMAIL_ADMIN_TO, finished, deactivated_report2)
 
     print '*****************************'
     print 'Completed (%s): %s' % (BUILD_VERSION, finished)
